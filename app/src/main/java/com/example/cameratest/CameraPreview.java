@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.List;
 
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
-    private static final String TAG = "CameraPreview";
+    private static final String TAG = "CameraTest_Preview";
     private SurfaceHolder mHolder;
     private Camera mCamera;
 
@@ -73,8 +73,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         for(Camera.Size size : supportPicSizes)
             Log.d(TAG, size.width + "x" + size.height);
 
-        mCameraParameters.setPreviewSize(800, 600);
-        mCameraParameters.setPictureSize(1600, 1200);
+        mCameraParameters.setPreviewSize(1280, 720);
+        mCameraParameters.setPictureSize(1280, 720);
         mCamera.setParameters(mCameraParameters);
         // start preview with new settings
         try {

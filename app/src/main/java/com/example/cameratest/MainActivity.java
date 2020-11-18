@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
+            mCamera.startPreview();
             Log.d(TAG, "onPictureTaken");
             File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
             if (pictureFile == null){
@@ -153,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private static File getOutputMediaFile(int type){
+    private static File getOutputMediaFile(int type) {
         File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "MyCameraApp");
 
         if (! mediaStorageDir.exists()){
@@ -183,6 +184,13 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
     }
 
+    public Camera.PreviewCallback mPreviewCallbak = new Camera.PreviewCallback() {
+        @Override
+        public void onPreviewFrame(byte[] data, Camera camera) {
+            //Log.d(TAG, "prevew callback------");
+        }
+    };
+
     @Override
     protected void onResume() {
         Log.d(TAG, "onResume");
@@ -194,6 +202,7 @@ public class MainActivity extends AppCompatActivity {
         // Create our Preview view and set it as the content of our activity.
         mPreview = new CameraPreview(this, mCamera);
         previewLayout.addView(mPreview);
+        mCamera.setPreviewCallback(mPreviewCallbak);
     }
 
     @Override
@@ -201,6 +210,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onStop");
         super.onStop();
         mCamera.release();
+        mCamera.setPreviewCallback(null);
         mCamera = null;
     }
 }
