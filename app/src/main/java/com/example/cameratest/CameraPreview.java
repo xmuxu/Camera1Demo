@@ -41,7 +41,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         // If your preview can change or rotate, take care of those events here.
         // Make sure to stop the preview before resizing or reformatting it.
         Log.d(TAG, "surfaceChanged");
@@ -73,8 +73,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         for(Camera.Size size : supportPicSizes)
             Log.d(TAG, size.width + "x" + size.height);
 
-        mCameraParameters.setPreviewSize(1280, 720);
-        mCameraParameters.setPictureSize(1280, 720);
+        List<Camera.Size> mSupportedPreviewSizes = mCameraParameters.getSupportedPreviewSizes();
+        List<Camera.Size> mSupportedVideoSizes = mCameraParameters.getSupportedVideoSizes();
+        Camera.Size optimalSize = getOptimalVideoSize(mSupportedVideoSizes,
+                mSupportedPreviewSizes, width, height);
+        Log.d(TAG, "optimalSize " + optimalSize.width + "x" + optimalSize.height);
+        mCameraParameters.setPreviewSize(optimalSize.width, optimalSize.height);
+        mCameraParameters.setPictureSize(optimalSize.width, optimalSize.height);
         mCamera.setParameters(mCameraParameters);
         // start preview with new settings
         try {
@@ -85,4 +90,54 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             Log.d(TAG, "Error starting camera preview: " + e.getMessage());
         }
     }
+
+    public static Camera.Size getOptimalVideoSize(List<Camera.Size> supportedVideoSizes,
+                                                  List<Camera.Size> previewSizes, int w, int h) {
+        // Use a very small tolerance because we want an exact match.
+        final double ASPECT_TOLERANCE = 0.1;
+        double targetRatio = (double) w / h;
+
+        // Supported video sizes list might be null, it means that we are allowed to use the preview
+        // sizes
+        List<Camera.Size> videoSizes;
+        if (supportedVideoSizes != null) {
+            videoSizes = supportedVideoSizes;
+        } else {
+            videoSizes = previewSizes;
+        }
+        Camera.Size optimalSize = null;
+
+        // Start with max value and refine as we iterate over available video sizes. This is the
+        // minimum difference between view and camera height.
+        double minDiff = Double.MAX_VALUE;
+
+        // Target view height
+        int targetHeight = h;
+
+        // Try to find a video size that matches aspect ratio and the target view size.
+        // Iterate over all available sizes and pick the largest size that can fit in the view and
+        // still maintain the aspect ratio.
+        for (Camera.Size size : videoSizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE)
+                continue;
+            if (Math.abs(size.height - targetHeight) < minDiff && previewSizes.contains(size)) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+
+        // Cannot find video size that matches the aspect ratio, ignore the requirement
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Camera.Size size : videoSizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff && previewSizes.contains(size)) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
+        return optimalSize;
+    }
+
 }
